@@ -1,8 +1,12 @@
 ﻿#include <iostream>
 #include <vector>
 #include <string>
+#include <cmath>
 
 
+#ifdef __linux__
+typedef u_int64_t uint64_t;
+#endif /// __linux__
 std::string ToBinaryFromASCII(const std::string& ascii);
 std::string ToBinaryFromDec(int num);
 std::string ToBinaryFromDecH(uint64_t num);
@@ -52,22 +56,26 @@ std::vector<uint64_t> k =
 int main(int argc, char** argv)
 {
     std::string hash;
-    if(argc > 1)
-        hash = ToBinaryFromASCII(argv[1]);
-    else
-        hash = ToBinaryFromASCII("");
+    std::string sub_input;
+    std::string input = argv[1];
+    std::string bin_input = ToBinaryFromASCII(input);
 
-    FillTo512Bit(hash);
-    std::vector<uint64_t> mes_num = SplitBy32Bit(hash);
-    ChangeMessages(mes_num);
-    Compression(mes_num);
+    FillTo512Bit(bin_input);
+    hash = bin_input;
+
+    for(uint64_t i = 0; i < hash.size(); i += 512)
+    {
+        sub_input = hash.substr(i, 512);
+
+        std::vector<uint64_t> mes_num = SplitBy32Bit(sub_input);
+        ChangeMessages(mes_num);
+        Compression(mes_num);
+        
+    }
     hash = "";
     CombiningHash(hash);
-
     Print("Hash is: ");
     Print(hash);
-
-    system("pause");
 }
 
 void FillTo512Bit(std::string& bin)
@@ -75,14 +83,14 @@ void FillTo512Bit(std::string& bin)
     int bin_size = bin.size();
     bin += '1';
 
-    while (bin.size() < 448)
-    {
-        bin += '0';
-    }
-
     std::string start_size_bin = ToBinaryFromDec(bin_size);
 
-    while (start_size_bin.size() + bin.size() < 512)
+    while(start_size_bin.size() != 64)
+    {
+        start_size_bin = '0' + start_size_bin;
+    }
+
+    while ((64 + bin.size()) % 512 != 0)
     {
         bin += '0';
     }
@@ -284,7 +292,7 @@ uint64_t ToDecFromBinary(const std::string& bin)
     uint64_t dec = 0;
     for (int i = 0; i < bin.size(); i++)
     {
-        dec += uint64_t((bin[i] - '0') * uint64_t(std::powl(2, bin.size() - 1 - i)));
+        dec += uint64_t((bin[i] - '0') * uint64_t(std::pow(2, bin.size() - 1 - i)));
     }
 
     return dec;
